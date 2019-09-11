@@ -1,0 +1,36 @@
+FROM arm32v7/debian
+
+LABEL maintainer="mrlesmithjr@gmail.com"
+
+ENV CONSUL_VERSION=1.6.0
+
+# Create a consul user and group first so the IDs get set the same way, even as
+# the rest of this may change over time.
+RUN addgroup consul && \
+  adduser --system --group consul
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends curl unzip ca-certificates && \
+  curl -k -sSLo /tmp/consul.zip https://releases.hashicorp.com/consul/{$CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_arm.zip && \
+  unzip -d /bin /tmp/consul.zip && \
+  rm /tmp/consul.zip && \
+  mkdir -p /data/consul && \
+  chown -R consul:consul /data/consul && \
+  consul version
+
+VOLUME ["/data/consul"]
+
+# Server RPC is used for communication between Consul clients and servers for internal
+# request forwarding.
+EXPOSE 8300
+
+# Serf LAN and WAN (WAN is used only by Consul servers) are used for gossip between
+# Consul agents. LAN is within the datacenter and WAN is between just the Consul
+# servers in all datacenters.
+EXPOSE 8301 8301/udp 8302 8302/udp
+
+# HTTP and DNS (both TCP and UDP) are the primary interfaces that applications
+# use to interact with Consul.
+EXPOSE 8500 8600 8600/udp
+
+CMD [ "consul", "agent", "-dev", "-bind", "0.0.0.0", "-client", "0.0.0.0", "-datacenter", "dc1", "-data-dir", "/data/consul" ]
