@@ -1,0 +1,31 @@
+sudo: true
+dist: xenial
+language: minimal
+services:
+  - docker
+addons:
+  apt:
+    packages:
+      - docker-ce
+before_install:
+  - sudo docker run --privileged linuxkit/binfmt:v0.6
+  - sudo docker run -d --privileged -p 1234:1234 --name buildkit moby/buildkit:latest
+    --addr tcp://0.0.0.0:1234 --oci-worker-platform linux/amd64 --oci-worker-platform
+    linux/armhf --oci-worker-platform linux/arm64
+  - sudo docker cp buildkit:/usr/bin/buildctl /usr/bin/
+  - export BUILDKIT_HOST=tcp://0.0.0.0:1234
+script:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker build -f Dockerfile-alpine -t mrlesmithjr/consul-arm:alpine .
+  - docker build -f Dockerfile-debian -t mrlesmithjr/consul-arm:debian .
+  - docker build -f Dockerfile-ubuntu -t mrlesmithjr/consul-arm:ubuntu .
+  - docker push mrlesmithjr/consul-arm:alpine
+  - docker push mrlesmithjr/consul-arm:debian
+  - docker push mrlesmithjr/consul-arm:ubuntu
+  - export DOCKER_CLI_EXPERIMENTAL=enabled
+  - docker manifest create mrlesmithjr/consul-arm mrlesmithjr/consul-arm:alpine mrlesmithjr/consul-arm:ubuntu mrlesmithjr/consul-arm:debian
+  - docker manifest push mrlesmithjr/consul-arm
+env:
+  global:
+    - secure: UrCj6RQ0T3jAh4SVHSzdnRclQwvAuDBLHH9mChMl0anzQ9xAnO+2Rpl6e8EUxmX7VbADYdgWzkqEygLwR1v+eX1pXVuWe3jQGLk3GPFEhmnTxDIvIyqADh0YNUWzw2WAwqwjCs9lY+pY5k0lWjtj/XywS/FVePpD4zgGh1SvDAhGnR976/QyMFuuB3Z+Rl163mC0qZkqliA7AY5YJRVHz77DO6JDSJXZGcazdbJ4G+ZgEjron0ly5yRWat2vBkpRfEkGzIxT64m5H+xmv216YwPLg1CYBzMPEN+wcjxvJp2Y3FtvZUrYK2falCQT99ZtRsywTlaaSeyyHFvSguwfVM6pyCCMGzhWIkbDb8OZTht3S96J2VDYQLQxR6LrgYCbCXs12ASv+UVqwpQ88WTsOzhcym9qj+xEyDn1Ssp3Ntsd+JJQgbVXlaNmW3De4ccT3GLyVMxDwB7XqosZimHTivUhoyJOZunuBjnascEBQt2lnoFbTdM+VIyd+umA5CXjdJ+lh2yDZgbwRyLDxWrLf4H1Ld+4pver0JK7DB+Xql87ESmQqyEfyjbYQl2fBPaS+qZetE7ygfAh7N/5AekjEQBs7PcX4q7d21EkbYS2YldKck6T6l2Pt0arBpcKOkGLntISJ9upZoH6MYTqugPfuWCc3zDtIlU/Vt0OJfZP0CA=
+    - secure: JO9OfW+Z0oOSbwmBY8LOtbObkl8BoNavJys2t7o4gr1YFNsN31C1pNVbkH9qXggkE1qj199MW08i8pio/HU9cV87xKJltk1YvcKpn2LMs+WlHjKr24MopNsicjknVYBONxJMkob996unJKAxEw9C7uDpv9qO8E8fLJXg8ZZRgRkzqMExE22noui3/gt6FblunpHynUSCnXquynyfk60JpAUuG/enFKvVSTqT7KCeKUMjYNMxT0f7fp5+5CvYWyNqwLqVWpSeFNA4FCfBiS9uI5f4hyA01cFWBFmN6UpfqA5rm8YgkzqZIW/B8jl6zC4qORLtAGzTB+2VSPhW41PT/7vQTV/u527sRGRARy4WSg5NaMA32KAjQAFfpcGI2JlpT9+2/UYIQUse26AMwkc8NaVpTBDBj1NgNawsJ5KdeTpIR3cOD1qFBTibU65L//A5u8bLvztJKmkJTJMtAYTpJG9ePGap03+FCmDRN+xw546R4WhNpSjfc0zajihEcPRyc/pjaW+4wKTy3R0a87AtfHIljS6/9in4PbI9SjjuLh08pGsMtWKo472FD8l7+scgfSLDrz+6H9FNkxAUuRwCGeeiTRj9t7dieWMaO9Q84vxnE9nTgwbvx7OMSBty0UvOCEVZyzrGnwUuVkBJEhdkMj6AZ+bSW6+QT3RJaetvmJo=
