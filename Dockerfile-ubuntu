@@ -2,7 +2,7 @@ FROM arm32v7/ubuntu
 
 LABEL maintainer="mrlesmithjr@gmail.com"
 
-ENV CONSUL_VERSION=1.6.0
+ENV CONSUL_VERSION=1.6.2
 
 # Create a consul user and group first so the IDs get set the same way, even as
 # the rest of this may change over time.
